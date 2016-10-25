@@ -8,7 +8,7 @@
 
 import UIKit
 
-class BusinessesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, UISearchBarDelegate {
+class BusinessesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, UISearchBarDelegate, FiltersViewControllerDelegate {
     
     @IBOutlet weak var tableView: UITableView!
     
@@ -30,18 +30,18 @@ class BusinessesViewController: UIViewController, UITableViewDataSource, UITable
         navigationItem.titleView = searchBar
         searchBar.delegate = self
         
-        Business.searchWithTerm(term: "Thai", completion: { (businesses: [Business]?, error: Error?) -> Void in
+        Business.searchWithTerm(term: "Mexican", completion: { (businesses: [Business]?, error: Error?) -> Void in
             
             self.businesses = businesses
             self.searchText = ""
             self.filterData(searchText: self.searchText)
             self.tableView.reloadData()
-            if let businesses = businesses {
-                for business in businesses {
-                    print(business.name!)
-                    print(business.address!)
-                }
-            }
+//            if let businesses = businesses {
+//                for business in businesses {
+//                    print(business.name!)
+//                    print(business.address!)
+//                }
+//            }
             }
         )
     }
@@ -82,17 +82,6 @@ class BusinessesViewController: UIViewController, UITableViewDataSource, UITable
         return cell
     }
     
-        /* Example of Yelp search with more search options specified
-         Business.searchWithTerm("Restaurants", sort: .Distance, categories: ["asianfusion", "burgers"], deals: true) { (businesses: [Business]!, error: NSError!) -> Void in
-         self.businesses = businesses
-         
-         for business in businesses {
-         print(business.name!)
-         print(business.address!)
-         }
-         }
-         */
-    
     func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
         searchBar.showsCancelButton = true
     }
@@ -114,14 +103,41 @@ class BusinessesViewController: UIViewController, UITableViewDataSource, UITable
         // Dispose of any resources that can be recreated.
     }
     
-    /*
      // MARK: - Navigation
      
      // In a storyboard-based application, you will often want to do a little preparation before navigation
-     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-     // Get the new view controller using segue.destinationViewController.
-     // Pass the selected object to the new view controller.
-     }
-     */
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        let navigationController = segue.destination as! UINavigationController
+        let filtersViewController = navigationController.topViewController as! FiltersViewController
+        
+        filtersViewController.delegate = self
+    }
     
+    func filtersViewController(filtersViewController: FiltersViewController, didUpdateFilters filters: [String : AnyObject]) {
+        let categories = filters["categories"] as? [String]
+        let deals = filters["deals"] as? Bool
+        let sort_temp = filters["sort_by"] as? NSNumber
+        let sort_by = (sort_temp?.intValue).map { YelpSortMode(rawValue: $0) }!
+        let radius_temp = filters["radius"] as? NSNumber
+        var radius = 0
+        switch radius_temp!.intValue {
+        case 0:
+            radius = 482
+        case 1:
+            radius = 1609
+        case 2:
+            radius = 8046
+        case 3:
+            radius = 32186
+        default:
+            radius = 40233
+        }
+
+        Business.searchWithTerm(term: "Restaurants", sort: sort_by, categories: categories, deals: deals, distance: radius) { (businesses: [Business]?, error: Error?) -> Void in
+            self.businesses = businesses
+            self.searchText = ""
+            self.filterData(searchText: self.searchText)
+            self.tableView.reloadData()
+        }
+    }
 }

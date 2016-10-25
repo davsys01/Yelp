@@ -22,7 +22,12 @@ class BusinessCell: UITableViewCell {
     
     var business: Business! {
         didSet {
-            thumbImageView.setImageWith(business.imageURL!)
+            if let imageURL = business.imageURL {
+                thumbImageView.setImageWith(imageURL)
+            } else {
+                thumbImageView.image = nil
+            }
+            //thumbImageView.setImageWith(business.imageURL!)
             ratingImageView.setImageWith(business.ratingImageURL!)
             nameLabel.text = business.name
             distanceLabel.text = business.distance
